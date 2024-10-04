@@ -18,7 +18,7 @@ function App() {
                 messages: [
                     {
                         role: "system",
-                        content: "Your job is to create cells in JSON. When you create multiple cells, as an array, they are for the purpose of displaying information in an easy to understand, and logical way. You can think of these cells as pages in a book, frames in a story, or slides in a deck. Keep in mind that you may only need one cell for simple tasks, and that some cases will require more consistent elements across cells.\nEach cell ONLY contains text, and may use multiple instances of text per cell depending on use case. Text is strictly defined with caption and content for each instance of text.\n{\"text\": [ { \"caption\": \"X\", \"content\": \"X\" } ]}\n\nText can contain any description of text. Whatever is fitting for the use case. \nWhatever the user asks for must be translated into visual cells. Each cell must start with cell_X starting with cell_0. Cells are wrapped in an array called \"cells\". Additionally, each cell should include a 'size' property that defines its width and height as a fraction of the container. For example, 'size': { 'width': '1/2', 'height': '1/3' } would make the cell half the width of the container and one-third the height. Take a break and generate in JSON"
+                        content: "Your job is to create cells in JSON. When you create multiple cells, as an array, they are for the purpose of displaying information in an easy to understand, and logical way. You can think of these cells as pages in a book, frames in a story, or slides in a deck. Keep in mind that you may only need one cell for simple tasks, and that some cases will require more consistent elements across cells.\nEach cell can either contain text or be colored. Text cells are defined with caption and content for each instance of text. Colored cells are defined with an RGB color value.\n{\"text\": [ { \"caption\": \"X\", \"content\": \"X\" } ]}\nor\n{\"color\": \"rgb(255, 0, 0)\"}\n\nText can contain any description of text. Whatever is fitting for the use case. \nWhatever the user asks for must be translated into visual cells. Each cell must start with cell_X starting with cell_0. Cells are wrapped in an array called \"cells\". Additionally, each cell should include a 'size' property that defines its width and height as a fraction of the container. For example, 'size': { 'width': '1/2', 'height': '1/3' } would make the cell half the width of the container and one-third the height. Take a break and generate in JSON"
                     },
                     {
                         role: "user",
@@ -96,11 +96,11 @@ function App() {
                         }
 
                         const width = cellData.size?.width || '1/1';
-                        const height = cellData.size?.height || 'auto';
+                        const height = cellData.size?.height || '1/1'; // Default to 1/1 instead of 'auto'
                         
                         // Convert fractions to percentages for more precise sizing
-                        const widthPercentage = width !== '1/1' ? `calc(${width} * 100% - 1rem)` : 'calc(100% - 1rem)';
-                        const heightPercentage = height !== 'auto' ? `calc(${height} * 100% - 1rem)` : 'auto';
+                        const widthPercentage = `calc(${width} * 100% - 1rem)`;
+                        const heightPercentage = `calc(${height} * 100% - 1rem)`;
                         
                         const cellStyle = {
                             width: widthPercentage,
@@ -108,23 +108,30 @@ function App() {
                             flexGrow: 0,
                             flexShrink: 0,
                             flexBasis: widthPercentage,
-                            marginBottom: '1rem'
+                            marginBottom: '1rem',
+                            minHeight: '100px', // Add a minimum height to ensure visibility
                         };
+
+                        if (cellData.color) {
+                            cellStyle.backgroundColor = cellData.color;
+                        }
                         
                         return (
                             <div 
                                 key={index} 
-                                className="bg-white p-4 rounded-lg shadow-md"
+                                className={`p-4 rounded-lg shadow-md ${cellData.color ? '' : 'bg-white'}`}
                                 style={cellStyle}
                             >
-                                {Array.isArray(cellData.text) ? cellData.text.map((textItem, textIndex) => (
-                                    <div key={textIndex}>
-                                        <p className="font-bold text-lg">{textItem.caption}</p>
-                                        <p className="text-sm">{textItem.content}</p>
-                                    </div>
-                                )) : (
-                                    <p>No text content available</p>
-                                )}
+                                {cellData.text ? (
+                                    Array.isArray(cellData.text) ? cellData.text.map((textItem, textIndex) => (
+                                        <div key={textIndex}>
+                                            <p className="font-bold text-lg">{textItem.caption}</p>
+                                            <p className="text-sm">{textItem.content}</p>
+                                        </div>
+                                    )) : (
+                                        <p>No text content available</p>
+                                    )
+                                ) : null}
                             </div>
                         );
                     })}
